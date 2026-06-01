@@ -1,0 +1,10 @@
+2026-05-24 22:24:16.437 | INFO     | __main__:main:147 - Run log: reports\_run_20260525_052416_intraday_momentum_spy_SPY.log
+2026-05-24 22:24:16.437 | INFO     | __main__:main:152 - Loading bars: SPY 5Min * → *
+2026-05-24 22:24:16.451 | INFO     | __main__:main:173 - Resampling 5Min → 30m (123319 bars in)...
+2026-05-24 22:24:16.460 | INFO     | __main__:main:175 - After resample: 22725 bars.
+2026-05-24 22:24:16.461 | INFO     | __main__:main:177 - Loaded 22725 bars. Computing indicators + regimes...
+2026-05-24 22:24:17.141 | INFO     | __main__:main:185 - Running backtest...
+2026-05-24 22:24:17.307 | INFO     | __main__:main:196 - Done. 901 trades, ending equity 39779.79 (-60.22%).
+2026-05-24 22:24:17.324 | INFO     | __main__:main:204 - Report:  reports\intraday_momentum_spy_SPY_20260525_052417.md
+2026-05-24 22:24:17.325 | INFO     | __main__:main:206 - Trades:  reports\intraday_momentum_spy_SPY_20260525_052417_trades.parquet
+2026-05-24 22:24:17.325 | INFO     | __main__:main:208 - Equity:  reports\intraday_momentum_spy_SPY_20260525_052417_equity.parquet

@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AlphaFactory — How we think, how it's built</title>
+<style>
+  :root{
+    --bg:#0a0e18;
+    --bg-2:#0f1626;
+    --surface:#131b2e;
+    --surface-2:#19223a;
+    --border:#222d4a;
+    --border-soft:#1a2238;
+    --text:#e7ecf7;
+    --muted:#94a1c1;
+    --faint:#5a6585;
+    --cyan:#5ed3ff;
+    --mint:#7df0a5;
+    --amber:#ffc266;
+    --rose:#ff7b95;
+    --violet:#b39bff;
+    --grid:#101a30;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;letter-spacing:-0.005em;}
+  a{color:var(--cyan);text-decoration:none;}
+  .wrap{max-width:1180px;margin:0 auto;padding:56px 32px 80px;}
+
+  /* ---- Hero ---- */
+  .hero{
+    position:relative;border:1px solid var(--border);border-radius:24px;
+    padding:44px 44px 40px;overflow:hidden;
+    background:
+      radial-gradient(1100px 380px at 85% -10%, rgba(94,211,255,.13), transparent 60%),
+      radial-gradient(900px 360px at -10% 110%, rgba(125,240,165,.08), transparent 60%),
+      linear-gradient(180deg, #0e1626 0%, #0a1120 100%);
+  }
+  .hero-grid{
+    position:absolute;inset:0;opacity:.35;pointer-events:none;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:32px 32px;
+    mask-image:radial-gradient(800px 360px at 50% 30%, #000 40%, transparent 80%);
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint);}
+  h1{font-size:48px;line-height:1.05;margin:14px 0 14px;letter-spacing:-0.02em;font-weight:700;}
+  h1 .accent{
+    background:linear-gradient(90deg,var(--cyan),var(--mint));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .lede{color:var(--muted);font-size:18px;line-height:1.55;max-width:720px;margin:0 0 28px;}
+  .meta{
+    display:flex;flex-wrap:wrap;gap:10px;position:relative;z-index:1;
+  }
+  .chip{
+    border:1px solid var(--border);background:rgba(255,255,255,.02);
+    color:var(--text);padding:8px 12px;border-radius:999px;font-size:13px;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .chip b{color:var(--cyan);font-weight:600;}
+  .chip.warn b{color:var(--amber);}
+  .chip.muted{color:var(--muted);}
+
+  /* ---- Section ---- */
+  section{margin-top:56px;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:24px;margin-bottom:22px;}
+  .section-head h2{font-size:24px;margin:0;letter-spacing:-0.01em;font-weight:600;}
+  .section-head .num{
+    font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:11px;letter-spacing:.2em;color:var(--faint);
+  }
+  .section-head .sub{color:var(--muted);font-size:14px;max-width:520px;text-align:right;line-height:1.5;}
+
+  /* ---- Pivots grid ---- */
+  .pivots{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+  .pivot{
+    border:1px solid var(--border);background:var(--surface);border-radius:16px;padding:22px;
+    position:relative;overflow:hidden;
+  }
+  .pivot::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--cyan),transparent 70%);
+  }
+  .pivot .qhead{
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.2em;
+    color:var(--faint);text-transform:uppercase;margin-bottom:10px;
+  }
+  .pivot h3{font-size:18px;margin:0 0 14px;font-weight:600;line-height:1.3;}
+  .vs{display:grid;grid-template-columns:1fr 14px 1fr;align-items:center;gap:10px;margin:10px 0 14px;}
+  .vs .opt{
+    padding:10px 12px;border-radius:10px;border:1px solid var(--border-soft);
+    background:rgba(255,255,255,.015);font-size:13px;line-height:1.35;
+  }
+  .vs .opt.bad{color:var(--muted);border-style:dashed;text-decoration:line-through;text-decoration-color:rgba(255,123,149,.5);}
+  .vs .opt.good{color:var(--text);border-color:rgba(125,240,165,.35);background:rgba(125,240,165,.06);}
+  .vs .arrow{color:var(--mint);text-align:center;font-size:14px;}
+  .pivot p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55;}
+  .pivot p b{color:var(--text);font-weight:600;}
+
+  /* ---- Guardrails ---- */
+  .rails{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .rail{
+    border:1px solid var(--border);background:var(--surface);border-radius:14px;
+    padding:18px 16px;position:relative;
+  }
+  .rail .n{
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--cyan);
+    letter-spacing:.15em;margin-bottom:10px;
+  }
+  .rail h4{font-size:14px;margin:0 0 6px;font-weight:600;line-height:1.3;}
+  .rail p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5;}
+  .rail.warn .n{color:var(--amber);}
+  .rail.rose .n{color:var(--rose);}
+  .rail.mint .n{color:var(--mint);}
+  .rail.violet .n{color:var(--violet);}
+
+  /* ---- Pipeline ---- */
+  .pipe-wrap{
+    border:1px solid var(--border);border-radius:18px;background:var(--surface);
+    padding:24px 22px 18px;
+  }
+  .pipe{
+    display:grid;grid-template-columns:1.1fr 36px 1.1fr 50px 1.1fr 50px 1.1fr 50px 1.1fr;
+    align-items:center;gap:0;
+  }
+  .stage{
+    border:1px solid var(--border);background:var(--bg-2);border-radius:12px;
+    padding:14px 14px 12px;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;
+  }
+  .stage .lbl{
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.18em;
+    color:var(--faint);text-transform:uppercase;
+  }
+  .stage h4{font-size:15px;margin:6px 0 6px;font-weight:600;}
+  .stage p{margin:0;color:var(--muted);font-size:12px;line-height:1.5;}
+  .arrow-h{height:2px;background:linear-gradient(90deg,var(--border),var(--cyan),var(--border));position:relative;}
+  .arrow-h::after{
+    content:"";position:absolute;right:-1px;top:-4px;width:0;height:0;
+    border-left:8px solid var(--cyan);border-top:5px solid transparent;border-bottom:5px solid transparent;
+  }
+  .gate{
+    position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  }
+  .diamond{
+    width:42px;height:42px;background:var(--surface-2);border:1px solid var(--cyan);
+    transform:rotate(45deg);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 4px rgba(94,211,255,.06);
+  }
+  .diamond span{transform:rotate(-45deg);font-size:11px;color:var(--cyan);font-weight:700;letter-spacing:.05em;}
+  .gate.human .diamond{border-color:var(--amber);box-shadow:0 0 0 4px rgba(255,194,102,.08);}
+  .gate.human .diamond span{color:var(--amber);}
+  .gate .glabel{font-size:10.5px;color:var(--faint);text-align:center;line-height:1.3;}
+  .pipe-legend{
+    display:flex;gap:18px;margin-top:18px;padding-top:14px;border-top:1px dashed var(--border-soft);
+    color:var(--muted);font-size:12px;flex-wrap:wrap;
+  }
+  .pipe-legend .key{display:inline-flex;align-items:center;gap:8px;}
+  .pipe-legend .sw{width:10px;height:10px;border-radius:2px;transform:rotate(45deg);}
+  .pipe-legend .sw.auto{border:1px solid var(--cyan);}
+  .pipe-legend .sw.human{border:1px solid var(--amber);}
+
+  /* ---- Stack + Exclusions ---- */
+  .two-col{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;}
+  .panel{
+    border:1px solid var(--border);background:var(--surface);border-radius:16px;padding:22px;
+  }
+  .panel h3{font-size:16px;margin:0 0 16px;font-weight:600;}
+  .stack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stack-item{
+    border:1px solid var(--border-soft);border-radius:10px;padding:12px 14px;background:rgba(255,255,255,.015);
+  }
+  .stack-item .role{
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;letter-spacing:.18em;
+    color:var(--faint);text-transform:uppercase;margin-bottom:4px;
+  }
+  .stack-item .name{font-size:14px;color:var(--text);font-weight:600;}
+  .stack-item .note{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45;}
+  .stack-item.custom{border-color:rgba(125,240,165,.3);background:rgba(125,240,165,.04);}
+  .stack-item.custom .role{color:var(--mint);}
+
+  .excl ul{list-style:none;margin:0;padding:0;}
+  .excl li{
+    display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--border-soft);
+    font-size:13px;line-height:1.5;color:var(--muted);
+  }
+  .excl li:last-child{border-bottom:none;}
+  .excl .x{
+    color:var(--rose);font-weight:700;font-family:"JetBrains Mono",monospace;
+    flex-shrink:0;font-size:14px;
+  }
+  .excl b{color:var(--text);font-weight:600;}
+
+  /* ---- Ops ---- */
+  .ops{
+    display:grid;grid-template-columns:1fr 1fr;gap:18px;
+    border:1px solid var(--border);border-radius:18px;background:var(--surface);padding:22px;
+  }
+  .ops .col h3{font-size:14px;margin:0 0 10px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;letter-spacing:.2em;
+    color:var(--faint);text-transform:uppercase;font-weight:600;}
+  .ops .col.ai h3{color:var(--cyan);}
+  .ops .col.human h3{color:var(--amber);}
+  .ops ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px;line-height:1.6;}
+  .ops ul li::marker{color:var(--faint);}
+  .ops .col.ai ul li::marker{color:var(--cyan);}
+  .ops .col.human ul li::marker{color:var(--amber);}
+
+  /* ---- Footer ---- */
+  footer{
+    margin-top:48px;padding-top:24px;border-top:1px dashed var(--border-soft);
+    color:var(--faint);font-size:12px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  }
+  footer .quote{color:var(--muted);font-style:italic;max-width:600px;}
+
+  /* ---- Responsive ---- */
+  @media (max-width: 980px){
+    .pivots{grid-template-columns:1fr;}
+    .rails{grid-template-columns:repeat(2,1fr);}
+    .two-col{grid-template-columns:1fr;}
+    .pipe{grid-template-columns:1fr;gap:8px;}
+    .arrow-h{display:none;}
+    .gate{margin:4px 0;}
+    .diamond{transform:rotate(0);width:auto;height:auto;padding:6px 14px;border-radius:8px;}
+    .diamond span{transform:none;}
+    .ops{grid-template-columns:1fr;}
+    h1{font-size:34px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============== HERO ============== -->
+  <div class="hero">
+    <div class="hero-grid"></div>
+    <div class="eyebrow"><span class="dot"></span> ALPHAFACTORY · INTERNAL THESIS</div>
+    <h1>How we <span class="accent">think</span>, and how the lab is <span class="accent">built</span>.</h1>
+    <p class="lede">
+      AlphaFactory is a solo-operated systematic trading lab. It is opinionated on purpose:
+      every architectural choice was made by asking <i>"what failure mode does this prevent?"</i>
+      first, and <i>"what does it let us do?"</i> second. This page is the short version of why.
+    </p>
+    <div class="meta">
+      <span class="chip">Market · <b>US equities only</b></span>
+      <span class="chip">Engine · <b>Nautilus Trader</b> (hybrid)</span>
+      <span class="chip">Budget · <b>$250–500/mo</b></span>
+      <span class="chip warn">Mode · <b>Hands-off, weekly review</b></span>
+      <span class="chip muted">Operator: solo retail · Python 3.12 stack</span>
+    </div>
+  </div>
+
+  <!-- ============== PIVOTS ============== -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="num">01 · THE REFLECTION</div>
+        <h2>Four pivots that shaped the lab</h2>
+      </div>
+      <div class="sub">Each was a moment where the obvious or seductive option got replaced by a more boring, more durable one.</div>
+    </div>
+
+    <div class="pivots">
+
+      <div class="pivot">
+        <div class="qhead">Pivot 01 · Infrastructure</div>
+        <h3>Don't build custom infrastructure before you've found an edge.</h3>
+        <div class="vs">
+          <div class="opt bad">Custom backtester, OMS, broker adapters, the lot</div>
+          <div class="arrow">→</div>
+          <div class="opt good">Nautilus Trader as engine + thin custom layer (regime, risk, journal)</div>
+        </div>
+        <p>The classic solo-trader trap is spending six months on infrastructure that <b>any open-source engine already gives you for free</b>. Nautilus gives backtest=live code equivalence, which eliminates an entire class of bugs. We write code only for the differentiated parts.</p>
+      </div>
+
+      <div class="pivot">
+        <div class="qhead">Pivot 02 · Scope</div>
+        <h3>Two markets is two problems. Pick one.</h3>
+        <div class="vs">
+          <div class="opt bad">Equities <i>and</i> crypto in parallel</div>
+          <div class="arrow">→</div>
+          <div class="opt good">US equities only (SPY, QQQ, liquid tech) for the first 6+ months</div>
+        </div>
+        <p>Different hours, different fees, different regulatory surface, different data vendors, different microstructure. Doing both simultaneously doesn't double the work — it more than doubles it. Crypto is deferred until the equities pipeline runs cleanly end-to-end.</p>
+      </div>
+
+      <div class="pivot">
+        <div class="qhead">Pivot 03 · Modeling</div>
+        <h3>Deep learning for price prediction is the trap, not the edge.</h3>
+        <div class="vs">
+          <div class="opt bad">LSTM / Transformer / DeepAR / Autoencoders for price prediction</div>
+          <div class="arrow">→</div>
+          <div class="opt good">GARCH for vol regime · Isolation Forest for data QA · small RF as signal filter only</div>
+        </div>
+        <p>Effective independent sample count on 5y of 5-min SPY is in the low thousands — nowhere near enough for thousands of model parameters. Complex models on low signal-to-noise data <b>manufacture exactly the overfit backtest</b> that walk-forward + Monte Carlo gates are designed to catch. We refuse to build that trap.</p>
+      </div>
+
+      <div class="pivot">
+        <div class="qhead">Pivot 04 · Hunting</div>
+        <h3>Prefer recent live evidence over decayed textbook factors.</h3>
+        <div class="vs">
+          <div class="opt bad">Classical academic factors (Fama-French, Jegadeesh-Titman, etc.)</div>
+          <div class="arrow">→</div>
+          <div class="opt good">Strategies with documented edge in the last 1–3 months of live trading</div>
+        </div>
+        <p>Half-life of a publicly known edge in liquid US equities is typically &lt;2 years. Strategies still working on fresh data are more likely to <i>still</i> work when we test them. Every strategy spec carries an <b>"evidence of recent edge"</b> citation in its header.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============== GUARDRAILS ============== -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="num">02 · THE GUARDRAILS</div>
+        <h2>Seven principles, non-negotiable</h2>
+      </div>
+      <div class="sub">If a proposal violates any of these, it gets pushed back — even if it would technically work.</div>
+    </div>
+
+    <div class="rails">
+      <div class="rail mint">
+        <div class="n">01</div>
+        <h4>Process &gt; result</h4>
+        <p>A good trade that loses is fine. A bad trade that wins is bad process.</p>
+      </div>
+      <div class="rail mint">
+        <div class="n">02</div>
+        <h4>Risk &gt; entry quality</h4>
+        <p>Sizing, stops, and kill switches matter more than signal cleverness.</p>
+      </div>
+      <div class="rail">
+        <div class="n">03</div>
+        <h4>Regime-aware</h4>
+        <p>A strategy is never universally good — only good <i>in a regime</i>. Tag every signal.</p>
+      </div>
+      <div class="rail rose">
+        <div class="n">04</div>
+        <h4>AI does not auto-trade</h4>
+        <p>AI codes, tests, audits, summarizes. AI does not send orders unsupervised.</p>
+      </div>
+      <div class="rail warn">
+        <div class="n">05</div>
+        <h4>Backtests lie by default</h4>
+        <p>Control for overfitting, regime drift, fees, slippage, survivorship, lookahead.</p>
+      </div>
+      <div class="rail violet">
+        <div class="n">06</div>
+        <h4>Operator is part of the system</h4>
+        <p>The lab must actively prevent FOMO, revenge trades, oversizing, manual overrides.</p>
+      </div>
+      <div class="rail rose">
+        <div class="n">07</div>
+        <h4>No live without gates</h4>
+        <p>All validation passed · ≥30 paper-trading days · reconciliation clean · kill switches tested.</p>
+      </div>
+      <div class="rail" style="border-style:dashed;background:transparent;">
+        <div class="n" style="color:var(--faint);">+</div>
+        <h4 style="color:var(--muted);">Honest critique invited</h4>
+        <p>Operator explicitly asks for pushback. Flag tradeoffs, don't hide them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== PIPELINE ============== -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="num">03 · THE PIPELINE</div>
+        <h2>From idea to capital, with three gates in the way</h2>
+      </div>
+      <div class="sub">Two gates run automatically. The middle one — paper to live — requires a human signature, always.</div>
+    </div>
+
+    <div class="pipe-wrap">
+      <div class="pipe">
+        <div class="stage">
+          <div class="lbl">Stage 01</div>
+          <div>
+            <h4>Hunt &amp; spec</h4>
+            <p>Find candidates with recent live edge. Write a spec with regime tags and risk caps.</p>
+          </div>
+        </div>
+        <div class="arrow-h"></div>
+        <div class="stage">
+          <div class="lbl">Stage 02</div>
+          <div>
+            <h4>Backtest</h4>
+            <p>Walk-forward + Monte Carlo. Survivorship and lookahead controls.</p>
+          </div>
+        </div>
+        <div class="gate">
+          <div class="diamond"><span>G1</span></div>
+          <div class="glabel">Auto<br>backtest → paper</div>
+        </div>
+        <div class="stage">
+          <div class="lbl">Stage 03</div>
+          <div>
+            <h4>Paper trade</h4>
+            <p>≥30 days. Daily reconciliation. Regime coverage logged.</p>
+          </div>
+        </div>
+        <div class="gate human">
+          <div class="diamond"><span>G2</span></div>
+          <div class="glabel">Human sign-off<br>paper → live small</div>
+        </div>
+        <div class="stage">
+          <div class="lbl">Stage 04</div>
+          <div>
+            <h4>Live small</h4>
+            <p>Real money, tiny size. Sharpe ≥ 0.3 to clear the floor.</p>
+          </div>
+        </div>
+        <div class="gate">
+          <div class="diamond"><span>G3</span></div>
+          <div class="glabel">AI proposes,<br>operator confirms</div>
+        </div>
+        <div class="stage">
+          <div class="lbl">Stage 05</div>
+          <div>
+            <h4>Live full</h4>
+            <p>Daily demotion check. Any regime drift &rarr; instant downgrade.</p>
+          </div>
+        </div>
+      </div>
+      <div class="pipe-legend">
+        <span class="key"><span class="sw auto"></span> Automatic gate — AI runs the check on every backtest / weekly on active strategies</span>
+        <span class="key"><span class="sw human"></span> Human-in-the-loop — operator must sign off before money moves</span>
+        <span class="key" style="color:var(--faint);">Quality bars (Sharpe ≥ 1.0 paper, profit factor ≥ 1.3, ≥30 trades, WF + MC survival) are not risk-tolerance dials.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== STACK + EXCLUSIONS ============== -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="num">04 · THE STACK</div>
+        <h2>What's in the box, and what we deliberately left out</h2>
+      </div>
+      <div class="sub">Boring stack, picky exclusions. Each "no" on the right was a real conversation, not an oversight.</div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <h3>Tech stack — bought vs. built</h3>
+        <div class="stack-grid">
+          <div class="stack-item">
+            <div class="role">Engine</div>
+            <div class="name">Nautilus Trader</div>
+            <div class="note">Backtest, OMS, execution sim, live trading — same code path.</div>
+          </div>
+          <div class="stack-item">
+            <div class="role">Data</div>
+            <div class="name">Polygon · Developer tier</div>
+            <div class="note">Intraday + historical US equities. Unlocks real 5-min bars.</div>
+          </div>
+          <div class="stack-item">
+            <div class="role">Broker</div>
+            <div class="name">Alpaca (paper) → IBKR</div>
+            <div class="note">Paper-first for ≥30d. IBKR is the eventual upgrade.</div>
+          </div>
+          <div class="stack-item">
+            <div class="role">Storage</div>
+            <div class="name">DuckDB + Parquet</div>
+            <div class="note">Local-first analytics. Fast, cheap, reproducible.</div>
+          </div>
+          <div class="stack-item custom">
+            <div class="role">Built · Regime</div>
+            <div class="name">ADX × ATR + GARCH overlay</div>
+            <div class="note">Tags every bar with regime, vol bucket, trend bucket.</div>
+          </div>
+          <div class="stack-item custom">
+            <div class="role">Built · Risk</div>
+            <div class="name">Risk policy enforcer</div>
+            <div class="note">Sizing, stops, kill switches. Signal gen never bypasses it.</div>
+          </div>
+          <div class="stack-item custom">
+            <div class="role">Built · Journal</div>
+            <div class="name">Daily / weekly journal</div>
+            <div class="note">Adherence-to-plan scoring, not just P&amp;L.</div>
+          </div>
+          <div class="stack-item custom">
+            <div class="role">Built · Surface</div>
+            <div class="name">Streamlit + FastAPI</div>
+            <div class="note">Live artifact dashboards, weekly "needs attention" digest.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel excl">
+        <h3>What is <span style="color:var(--rose);">not</span> in the lab</h3>
+        <ul>
+          <li><span class="x">×</span><div><b>LSTM / Transformer / DeepAR</b> for price prediction. Sample-count math doesn't work for solo retail.</div></li>
+          <li><span class="x">×</span><div><b>ARIMA on prices.</b> Returns are approximately random walk — ARIMA predicts near zero and gets eaten by costs.</div></li>
+          <li><span class="x">×</span><div><b>Autoencoders / HDBSCAN</b> for trade decisions. Too unstable on small samples.</div></li>
+          <li><span class="x">×</span><div><b>Crypto, options, futures</b> — deferred until equities pipeline is clean end-to-end.</div></li>
+          <li><span class="x">×</span><div><b>"Holy grail" / secret strategies.</b> If it were that good, it wouldn't be posted publicly.</div></li>
+          <li><span class="x">×</span><div><b>Custom backtester / OMS / broker adapters.</b> Nautilus already does these. We refuse to rebuild them.</div></li>
+          <li><span class="x">×</span><div><b>AI with order-send authority.</b> Ever. No exceptions, no overrides.</div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== OPS MODEL ============== -->
+  <section>
+    <div class="section-head">
+      <div>
+        <div class="num">05 · THE OPERATING MODEL</div>
+        <h2>Who does what, on what cadence</h2>
+      </div>
+      <div class="sub">Default is autonomous. The human shows up at the gates, the keys, and the capital decisions.</div>
+    </div>
+
+    <div class="ops">
+      <div class="col ai">
+        <h3>AI runs daily</h3>
+        <ul>
+          <li>Scheduled data pulls (nightly / weekly)</li>
+          <li>Auto-run backtests on every new strategy as soon as it's written</li>
+          <li>Strategy hunting from public sources, with recent-edge citations</li>
+          <li>Walk-forward + Monte Carlo on every candidate</li>
+          <li>Paper-trading monitor as a live artifact dashboard</li>
+          <li>Weekly "what happened, what needs your attention" digest</li>
+          <li>G1 auto-promotion · G2/G3 weekly check · demotion check daily</li>
+        </ul>
+      </div>
+      <div class="col human">
+        <h3>Operator decides</h3>
+        <ul>
+          <li>Real-money go-live decisions (always)</li>
+          <li>Any touch of Alpaca credentials or live API keys</li>
+          <li>Architectural pivots that contradict prior commitments</li>
+          <li>Strategies that hit G2 → "READY TO REVIEW" notification</li>
+          <li>Per-decision overrides on graduation criteria (with journal entry + cool-down)</li>
+          <li>Capital allocation across the live book</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="quote">
+      "Adding LSTMs to a low-signal price series would manufacture the exact failure mode our walk-forward gates are designed to catch. We'd be building the trap and then catching ourselves in it."
+    </div>
+    <div>AlphaFactory · internal thesis page · v1.0</div>
+  </footer>
+
+</div>
+</body>
+</html>
