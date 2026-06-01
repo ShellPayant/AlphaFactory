@@ -94,12 +94,37 @@ alpha_factory/
     └── strategy_spec_template.md
 ```
 
+## Backtests & lessons
+
+Two strategies have run end-to-end through the lab. **Both were graveyard'd.** That's not a bug — it's the design. Below: the verdicts, the key numbers, and what each failure taught us. The full reports are in [`reports/`](./reports/).
+
+### Tested so far
+
+| Strategy | Timeframe | Verdict | Headline | Why it died |
+|---|---|---|---|---|
+| **Range Mean Reversion** | 5-min SPY · 2020-2026 | ☠ Graveyard | 4 trades over 123,319 bars, Sharpe -0.16 | Spec too restrictive — fired ~0.8 signals/year. Sample too small to evaluate, let alone trade. |
+| **Intraday Momentum SPY** | 30-min SPY · 2020-2026 | ☠ Graveyard | 901 trades, **-60.2%** total return, Sharpe -12.0 | Designed for leverage we don't allow (40% of signals blocked by 1× notional cap) · brutal fee sensitivity at tight stops · no regime where edge beats cost. |
+
+Detailed reports: [Range MR full backtest](./reports/range_mean_reversion_SPY_20260525_042616.md) · [Intraday Momentum full backtest](./reports/intraday_momentum_spy_SPY_20260525_052417.md)
+
+### What we learned
+
+1. **Signal frequency is a pre-filter, not a discovery.** A strategy that produces 4 signals in 5 years isn't *"selective"* — it's untestable. New specs now carry an expected-signals-per-year estimate before any code gets written. If the estimate is <30, the spec gets rewritten or shelved.
+
+2. **The fee/leverage trap is the most expensive lesson in retail quant.** Intraday Momentum was profitable *before* costs and *with* leverage — exactly the regime we don't operate in. New floor: every spec must have natural R:R ≥ 2 **or** run on daily/swing timeframes. Tight intraday stops + 1× notional = donation to the broker.
+
+3. **Negative results carry information the report should surface.** Both backtests output regime-sliced P&L, exit-reason breakdowns, and signal-skip counters. *Why* it failed (e.g. *"1,710 signals blocked by notional cap, 194 by min-stop guard"*) is the lesson — not just the equity curve.
+
+4. **Two kills in two attempts is the lab working, not the lab failing.** The point of validation gates is to catch broken specs *before* paper trading, and paper trading before live. Both strategies died at gate one with zero real money risked. That is the system functioning exactly as designed.
+
+These lessons are codified in [`docs/graduation_criteria.md`](./docs/graduation_criteria.md) — the pre-defined gates a strategy must clear before paper, and before live.
+
 ## Roadmap
 
 - **Phase 0** ✅ Charter, philosophy docs, risk policy
-- **Phase 1** 🚧 Data engine, regime classifier, indicators (you are here)
-- **Phase 2** — First strategy implemented as Nautilus `Strategy` + backtest report
-- **Phase 3** — Walk-forward harness + Monte Carlo + graveyard pipeline
+- **Phase 1** ✅ Data engine, regime classifier, indicators
+- **Phase 2** ✅ First strategy + backtest reports + research engine
+- **Phase 3** 🚧 Walk-forward harness · Monte Carlo · GARCH vol regime · IsolationForest data QA (you are here)
 - **Phase 4** — Paper trading on Alpaca (≥30 trading days before live)
 - **Phase 5** — Live with micro capital, kill switches armed, daily reconciliation
 
